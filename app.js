@@ -246,6 +246,16 @@ function navigateTo(pageId, playlistId = null) {
     const sidebarItem = document.querySelector(`.sidebar div[data-playlist-id="${playlistId}"]`);
     if (sidebarItem) sidebarItem.classList.add("active");
   }
+
+  // Sync mobile bottom tab bar active state
+  const mobileHomeTab = document.getElementById("mobile-tab-home");
+  const mobileSearchTab = document.getElementById("mobile-tab-search");
+  [mobileHomeTab, mobileSearchTab].forEach(el => el?.classList.remove("active"));
+  if (pageId === "home") {
+    mobileHomeTab?.classList.add("active");
+  } else if (pageId === "search") {
+    mobileSearchTab?.classList.add("active");
+  }
   
   // Toggle Search bar visibility in Header
   const searchBar = document.getElementById("header-search-bar");
@@ -1580,6 +1590,66 @@ function setupEventListeners() {
   closeRightPanelBtn.addEventListener("click", () => {
     document.querySelector(".app-container").classList.remove("show-right-panel");
     rightPanelBtn.classList.remove("active");
+  });
+
+  // ---- Mobile: bottom tab bar + slide-in library + mini-player ----
+  const sidebarEl = document.getElementById("app-sidebar");
+  const backdropEl = document.getElementById("sidebar-backdrop");
+  const mobileTabHome = document.getElementById("mobile-tab-home");
+  const mobileTabSearch = document.getElementById("mobile-tab-search");
+  const mobileTabLibrary = document.getElementById("mobile-tab-library");
+
+  const setActiveMobileTab = (tab) => {
+    [mobileTabHome, mobileTabSearch, mobileTabLibrary].forEach(btn => btn.classList.remove("active"));
+    if (tab) tab.classList.add("active");
+  };
+
+  const openMobileLibrary = () => {
+    sidebarEl.classList.add("mobile-open");
+    backdropEl.classList.add("show");
+    setActiveMobileTab(mobileTabLibrary);
+  };
+
+  const closeMobileLibrary = () => {
+    sidebarEl.classList.remove("mobile-open");
+    backdropEl.classList.remove("show");
+  };
+
+  mobileTabHome?.addEventListener("click", () => {
+    closeMobileLibrary();
+    navigateTo("home");
+    setActiveMobileTab(mobileTabHome);
+  });
+
+  mobileTabSearch?.addEventListener("click", () => {
+    closeMobileLibrary();
+    navigateTo("search");
+    setActiveMobileTab(mobileTabSearch);
+  });
+
+  mobileTabLibrary?.addEventListener("click", () => {
+    if (sidebarEl.classList.contains("mobile-open")) {
+      closeMobileLibrary();
+    } else {
+      openMobileLibrary();
+    }
+  });
+
+  document.getElementById("sidebar-close-btn")?.addEventListener("click", closeMobileLibrary);
+  backdropEl?.addEventListener("click", closeMobileLibrary);
+
+  // Closing the library overlay automatically when a playlist/liked-songs item is tapped
+  document.getElementById("sidebar-playlist-list")?.addEventListener("click", () => {
+    if (window.matchMedia("(max-width: 700px)").matches) closeMobileLibrary();
+  });
+
+  // Tapping the mini player (but not its buttons/slider) opens the full Now Playing view
+  document.getElementById("player-bar-footer")?.addEventListener("click", (e) => {
+    if (!window.matchMedia("(max-width: 700px)").matches) return;
+    if (e.target.closest("button") || e.target.closest("input")) return;
+    document.querySelector(".app-container").classList.add("show-right-panel");
+    rightPanelBtn.classList.add("active");
+    if (state.isPlaying && visualizerEnabled) startVisualizerAnimation();
   });
   
   // Heart buttons on player & sidebar panels
